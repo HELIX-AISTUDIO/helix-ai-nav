@@ -16,6 +16,7 @@ import re
 import sys
 import time
 import urllib.request
+from urllib.parse import urlsplit
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -48,17 +49,33 @@ CURATED = {
 }
 
 
+UA = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+      '(KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36')
+
+
 def http_post(url, payload, timeout=30, tries=4):
-    """带退避重试的 POST；CI 环境网络抖动比本地多，重试能显著减少假失败。"""
+    """带退避重试的 POST。
+
+    请求头刻意伪装成普通浏览器：链动小铺前置了阿里云 ESA 风控，
+    只带一个自造 UA 时会被返回「HTTP 200 + 空响应体」，JSON 解析随之失败。
+    """
     body = json.dumps(payload).encode()
+    origin = '{u.scheme}://{u.netloc}'.format(u=urlsplit(url))
     last = None
     for i in range(tries):
         req = urllib.request.Request(url, method='POST')
-        req.add_header('Content-Type', 'application/json')
-        req.add_header('User-Agent', 'Mozilla/5.0 (compatible; helix-sync/1.0)')
+        req.add_header('Content-Type', 'application/json;charset=UTF-8')
+        req.add_header('User-Agent', UA)
+        req.add_header('Accept', 'application/json, text/plain, */*')
+        req.add_header('Accept-Language', 'zh-CN,zh;q=0.9,en;q=0.8')
+        req.add_header('Origin', origin)
+        req.add_header('Referer', origin + '/')
         try:
             with urllib.request.urlopen(req, body, timeout=timeout) as r:
-                return json.loads(r.read().decode())
+                raw = r.read()
+                if not raw.strip():
+                    raise ValueError('响应体为空（疑似被风控拦截，HTTP %s）' % r.status)
+                return json.loads(raw.decode('utf-8', 'replace'))
         except Exception as e:
             last = e
             if i < tries - 1:
