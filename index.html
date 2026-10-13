@@ -321,6 +321,15 @@ h2{font-size:clamp(21px,2.4vw,28px);letter-spacing:-.01em;font-weight:750;line-h
   font-size:12.5px;color:var(--muted-2);
 }
 .goods-foot .links{display:flex;gap:10px;flex-wrap:wrap}
+/* 实时同步状态标记 */
+.goods-count.live{background:var(--green-soft);border-color:var(--green-line);color:#6ee7a0}
+.goods-count.live::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:#6ee7a0;margin-right:6px;vertical-align:middle;animation:blip 2s infinite}
+/* 已下架商品：降权 + 禁用点击 */
+.g-item.g-off{opacity:.42;filter:grayscale(.55);cursor:not-allowed}
+.g-item.g-off:hover{transform:none;border-color:var(--line);box-shadow:none}
+.g-item.g-off .g-price{color:var(--muted-2);text-decoration:line-through}
+.g-item.g-off .g-arrow{display:none}
 
 /* 店铺卡 */
 .shops{display:grid;grid-template-columns:1fr 1fr;gap:20px}
@@ -656,113 +665,98 @@ html.js .reveal:not(.in){opacity:0;transform:translateY(16px)}
         <h2>全部在售商品，点击直达下单页</h2>
         <p class="section-desc">下列为两店当前在售的具体商品，点击任意一件，直接进入对应店铺的商品详情页下单。</p>
       </div>
-
+      <!-- GOODS:START —— 本区块由 sync-goods.py 自动生成，请勿手工修改区块内部 -->
       <div class="goods-head reveal">
-        <span class="goods-count">共 13 件在售</span>
-        <span class="goods-hint">价格为 2026-10-13 抓取的快照，实时价格与库存请以商品页显示为准</span>
+        <span class="goods-count" id="goodsCount">共 13 件在售</span>
+        <span class="goods-hint" id="goodsHint">价格为 2026-10-13 抓取的快照，实时价格与库存请以商品页显示为准</span>
       </div>
 
-      <div class="goods">
-        <!-- 订阅代充 -->
-        <a class="g-item reveal" href="https://wzyp.cn/item/z7n6ts" target="_blank" rel="noopener">
+      <div class="goods" id="goodsGrid">
+        <a class="g-item reveal" data-key="z7n6ts" data-shop="wzyp" href="https://wzyp.cn/item/z7n6ts" target="_blank" rel="noopener">
           <span class="g-top"><span class="g-shop gold">链动小铺</span><span class="g-price">¥126.54</span></span>
           <span class="g-name">Plus 官方卡冲 1 个月</span>
           <span class="g-foot"><span class="g-meta">质保订阅 · 官方卡冲</span>
             <svg class="g-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
           </span>
         </a>
-
-        <a class="g-item reveal" href="https://www.16688.com.cn/goods/G64512440" target="_blank" rel="noopener">
+        <a class="g-item reveal" data-key="G64512440" data-shop="16688" href="https://www.16688.com.cn/goods/G64512440" target="_blank" rel="noopener">
           <span class="g-top"><span class="g-shop green">16688</span><span class="g-price">¥132</span></span>
           <span class="g-name">GPT Plus 官方充值月卡</span>
           <span class="g-foot"><span class="g-meta">直冲个人账号 · 质保 30 天</span>
             <svg class="g-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
           </span>
         </a>
-
-        <a class="g-item reveal" href="https://wzyp.cn/item/loqcbj" target="_blank" rel="noopener">
+        <a class="g-item reveal" data-key="loqcbj" data-shop="wzyp" href="https://wzyp.cn/item/loqcbj" target="_blank" rel="noopener">
           <span class="g-top"><span class="g-shop gold">链动小铺</span><span class="g-price">¥752.4</span></span>
           <span class="g-name">Pro Standard（原 5X）官方卡冲 1 个月</span>
           <span class="g-foot"><span class="g-meta">质保订阅 · 官方卡冲</span>
             <svg class="g-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
           </span>
         </a>
-
-        <a class="g-item reveal" href="https://wzyp.cn/item/2smf8k" target="_blank" rel="noopener">
+        <a class="g-item reveal" data-key="2smf8k" data-shop="wzyp" href="https://wzyp.cn/item/2smf8k" target="_blank" rel="noopener">
           <span class="g-top"><span class="g-shop gold">链动小铺</span><span class="g-price">¥1197</span></span>
           <span class="g-name">Pro More（原 20X）官方卡冲 1 个月</span>
           <span class="g-foot"><span class="g-meta">质保订阅 · 官方卡冲</span>
             <svg class="g-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
           </span>
         </a>
-
-        <a class="g-item reveal" href="https://wzyp.cn/item/oes7j0" target="_blank" rel="noopener">
+        <a class="g-item reveal" data-key="oes7j0" data-shop="wzyp" href="https://wzyp.cn/item/oes7j0" target="_blank" rel="noopener">
           <span class="g-top"><span class="g-shop gold">链动小铺</span><span class="g-price">¥3534</span></span>
           <span class="g-name">Pro Max（25X）官方卡冲 1 个月</span>
           <span class="g-foot"><span class="g-meta">质保订阅 · 顶级订阅档</span>
             <svg class="g-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
           </span>
         </a>
-
-        <!-- Codex 接码 / CDK -->
-        <a class="g-item reveal" href="https://wzyp.cn/item/b2seen" target="_blank" rel="noopener">
-          <span class="g-top"><span class="g-shop gold">链动小铺</span><span class="g-price">¥1.65</span></span>
-          <span class="g-name">Codex 短效接码 · 5 秒极速换号</span>
-          <span class="g-foot"><span class="g-meta">不限次数 · 全自动系统</span>
-            <svg class="g-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
-          </span>
-        </a>
-
-        <a class="g-item reveal" href="https://wzyp.cn/item/m70j2l" target="_blank" rel="noopener">
-          <span class="g-top"><span class="g-shop gold">链动小铺</span><span class="g-price">¥5.44</span></span>
-          <span class="g-name">Codex 接码 · 长效 20-30 天</span>
-          <span class="g-foot"><span class="g-meta">美国实卡 · 可复绑</span>
-            <svg class="g-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
-          </span>
-        </a>
-
-        <a class="g-item reveal" href="https://wzyp.cn/item/4n3idp" target="_blank" rel="noopener">
+        <a class="g-item reveal" data-key="4n3idp" data-shop="wzyp" href="https://wzyp.cn/item/4n3idp" target="_blank" rel="noopener">
           <span class="g-top"><span class="g-shop gold">链动小铺</span><span class="g-price">¥1.16</span></span>
           <span class="g-name">Codex CDK · 短效单次</span>
           <span class="g-foot"><span class="g-meta">美国实卡 · 支持 API 对接</span>
             <svg class="g-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
           </span>
         </a>
-
-        <a class="g-item reveal" href="https://wzyp.cn/item/b1wb4x" target="_blank" rel="noopener">
+        <a class="g-item reveal" data-key="b2seen" data-shop="wzyp" href="https://wzyp.cn/item/b2seen" target="_blank" rel="noopener">
+          <span class="g-top"><span class="g-shop gold">链动小铺</span><span class="g-price">¥1.65</span></span>
+          <span class="g-name">Codex 短效接码 · 5 秒极速换号</span>
+          <span class="g-foot"><span class="g-meta">不限次数 · 全自动系统</span>
+            <svg class="g-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+          </span>
+        </a>
+        <a class="g-item reveal" data-key="m70j2l" data-shop="wzyp" href="https://wzyp.cn/item/m70j2l" target="_blank" rel="noopener">
+          <span class="g-top"><span class="g-shop gold">链动小铺</span><span class="g-price">¥5.44</span></span>
+          <span class="g-name">Codex 接码 · 长效 20-30 天</span>
+          <span class="g-foot"><span class="g-meta">美国实卡 · 可复绑</span>
+            <svg class="g-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+          </span>
+        </a>
+        <a class="g-item reveal" data-key="b1wb4x" data-shop="wzyp" href="https://wzyp.cn/item/b1wb4x" target="_blank" rel="noopener">
           <span class="g-top"><span class="g-shop gold">链动小铺</span><span class="g-price">¥11.64</span></span>
           <span class="g-name">Codex CDK · 10 次接码</span>
           <span class="g-foot"><span class="g-meta">美国实卡 · 支持 API 对接</span>
             <svg class="g-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
           </span>
         </a>
-
-        <a class="g-item reveal" href="https://wzyp.cn/item/1tyvn1" target="_blank" rel="noopener">
+        <a class="g-item reveal" data-key="1tyvn1" data-shop="wzyp" href="https://wzyp.cn/item/1tyvn1" target="_blank" rel="noopener">
           <span class="g-top"><span class="g-shop gold">链动小铺</span><span class="g-price">¥58.2</span></span>
           <span class="g-name">Codex CDK · 50 次接码</span>
           <span class="g-foot"><span class="g-meta">美国实卡 · 支持 API 对接</span>
             <svg class="g-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
           </span>
         </a>
-
-        <!-- Claude 接码 -->
-        <a class="g-item reveal" href="https://wzyp.cn/item/kqr3kd" target="_blank" rel="noopener">
+        <a class="g-item reveal" data-key="kqr3kd" data-shop="wzyp" href="https://wzyp.cn/item/kqr3kd" target="_blank" rel="noopener">
           <span class="g-top"><span class="g-shop gold">链动小铺</span><span class="g-price">¥3.5</span></span>
           <span class="g-name">Claude 接码 · 2-9 天</span>
           <span class="g-foot"><span class="g-meta">美国实卡 · 可二次</span>
             <svg class="g-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
           </span>
         </a>
-
-        <a class="g-item reveal" href="https://wzyp.cn/item/hheojo" target="_blank" rel="noopener">
+        <a class="g-item reveal" data-key="hheojo" data-shop="wzyp" href="https://wzyp.cn/item/hheojo" target="_blank" rel="noopener">
           <span class="g-top"><span class="g-shop gold">链动小铺</span><span class="g-price">¥3.88</span></span>
           <span class="g-name">Claude 接码 · 10-20 天</span>
           <span class="g-foot"><span class="g-meta">美国实卡 · 可二次</span>
             <svg class="g-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
           </span>
         </a>
-
-        <a class="g-item reveal" href="https://wzyp.cn/item/vqkl45" target="_blank" rel="noopener">
+        <a class="g-item reveal" data-key="vqkl45" data-shop="wzyp" href="https://wzyp.cn/item/vqkl45" target="_blank" rel="noopener">
           <span class="g-top"><span class="g-shop gold">链动小铺</span><span class="g-price">¥5.82</span></span>
           <span class="g-name">Claude 接码 · 21-30 天</span>
           <span class="g-foot"><span class="g-meta">美国长效实卡 · 可二次</span>
@@ -770,6 +764,7 @@ html.js .reveal:not(.in){opacity:0;transform:translateY(16px)}
           </span>
         </a>
       </div>
+      <!-- GOODS:END -->
 
       <div class="goods-foot reveal">
         <span>商品持续上新，缺货可私聊客服补货；下单前请先阅读商品详情页说明。</span>
@@ -1226,6 +1221,136 @@ html.js .reveal:not(.in){opacity:0;transform:translateY(16px)}
   setTimeout(function () {
     if (!fired) { items.forEach(function (el) { el.classList.add('in'); }); io.disconnect(); }
   }, 2000);
+})();
+
+/* ============================================================
+   4) 实时价格同步（渐进增强）
+   链动小铺接口对任意来源开放 CORS，可前端直连拿到实时价格与上下架状态；
+   16688 只放行自身域名（浏览器拿不到），该店仍以构建时快照为准。
+   任何一步不满足预期就静默放弃，页面保留内置快照，绝不出现空白或报错。
+   ============================================================ */
+(function () {
+  var grid = document.getElementById('goodsGrid');
+  var countEl = document.getElementById('goodsCount');
+  var hintEl = document.getElementById('goodsHint');
+  if (!grid || !countEl || !hintEl) return;
+  if (!window.fetch || !window.JSON || !window.Promise) return;
+
+  var ARROW = '<svg class="g-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+    'stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M7 17 17 7M9 7h8v8"/></svg>';
+
+  function fmtPrice(v) {
+    var f = parseFloat(v);
+    if (!isFinite(f)) return String(v);
+    return (f === Math.floor(f)) ? String(Math.floor(f)) : String(Math.round(f * 100) / 100);
+  }
+
+  // 接口原始名带营销 emoji 与长尾参数，新商品兜底清洗后再上屏
+  function cleanName(raw) {
+    var s = String(raw || '');
+    s = s.replace(/【[^】]*】/g, '');                                            // 去【】标注
+    s = s.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF\uFE0F]/g, ''); // 去 emoji
+    s = s.replace(/-{2,}/g, ' \u00b7 ').replace(/\s+/g, ' ').trim();
+    s = s.replace(/^[-\u00b7\s]+|[-\u00b7\s]+$/g, '');
+    return s.slice(0, 36) || String(raw || '未命名商品');
+  }
+
+  function makeCard(it) {
+    var a = document.createElement('a');
+    a.className = 'g-item reveal in';
+    a.setAttribute('data-key', it.goods_key);
+    a.setAttribute('data-shop', 'wzyp');
+    a.href = it.link || ('https://wzyp.cn/item/' + it.goods_key);
+    a.target = '_blank';
+    a.rel = 'noopener';
+
+    var top = document.createElement('span');
+    top.className = 'g-top';
+    var shop = document.createElement('span');
+    shop.className = 'g-shop gold';
+    shop.textContent = '链动小铺';
+    var price = document.createElement('span');
+    price.className = 'g-price';
+    price.textContent = '¥' + fmtPrice(it.price);
+    top.appendChild(shop);
+    top.appendChild(price);
+
+    var name = document.createElement('span');
+    name.className = 'g-name';
+    name.textContent = cleanName(it.name);
+
+    var foot = document.createElement('span');
+    foot.className = 'g-foot';
+    var meta = document.createElement('span');
+    meta.className = 'g-meta';
+    meta.textContent = '实时同步 · 以商品页说明为准';
+    foot.appendChild(meta);
+    foot.insertAdjacentHTML('beforeend', ARROW);
+
+    a.appendChild(top);
+    a.appendChild(name);
+    a.appendChild(foot);
+    return a;
+  }
+
+  function apply(list) {
+    var live = {}, i;
+    for (i = 0; i < list.length; i++) {
+      var it = list[i];
+      if (it && it.goods_key) live[String(it.goods_key)] = it;
+    }
+    var keys = Object.keys(live);
+    if (!keys.length) return;            // 返回体不可信，放弃本次同步
+
+    // 只处理链动小铺的卡片：16688 拿不到实时数据，不能误判成下架
+    var cards = grid.querySelectorAll('.g-item[data-shop="wzyp"]');
+    var seen = {};
+    for (i = 0; i < cards.length; i++) {
+      var card = cards[i];
+      var k = card.getAttribute('data-key');
+      if (!k) continue;
+      seen[k] = true;
+      var pe = card.querySelector('.g-price');
+      if (live[k]) {
+        if (pe) pe.textContent = '¥' + fmtPrice(live[k].price);
+        card.classList.remove('g-off');
+        card.removeAttribute('aria-disabled');
+      } else {                            // 已下架：标注并解除跳转
+        card.classList.add('g-off');
+        card.setAttribute('aria-disabled', 'true');
+        card.removeAttribute('href');
+        if (pe) pe.textContent = '已下架';
+      }
+    }
+
+    var appended = 0;
+    for (i = 0; i < keys.length; i++) {   // 新上架的商品
+      if (!seen[keys[i]]) { grid.appendChild(makeCard(live[keys[i]])); appended++; }
+    }
+
+    var live_count = grid.querySelectorAll('.g-item:not(.g-off)').length;
+    countEl.textContent = '共 ' + live_count + ' 件在售';
+    countEl.classList.add('live');
+    var t = new Date();
+    hintEl.textContent = '价格已实时同步（' +
+      ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2) +
+      '）· 最终以商品页显示为准';
+    if (appended) hintEl.textContent += ' · 新增 ' + appended + ' 件';
+  }
+
+  fetch('https://wzyp.cn/shopApi/Shop/goodsList', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: 'SEFBJWNM', current: 1, pageSize: 100, goods_type: 'card' }),
+    credentials: 'omit',
+    cache: 'no-store'
+  }).then(function (r) {
+    return r.ok ? r.json() : null;
+  }).then(function (d) {
+    if (!d || d.code !== 1 || !d.data || !Array.isArray(d.data.list)) return;
+    apply(d.data.list);
+  }).catch(function () { /* 静默：保留内置快照 */ });
 })();
 </script>
 </body>

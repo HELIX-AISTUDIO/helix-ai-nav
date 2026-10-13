@@ -1,0 +1,47 @@
+name: 同步店铺商品
+
+# 定时抓取两个店铺的在售商品与价格，写回 index.html 并提交。
+# 提交后 GitHub Pages 会自动重新发布，无需任何手工操作。
+#
+# 注意：这里刻意不加 [skip ci]——加了会让 GitHub Pages 跳过重新构建。
+
+on:
+  schedule:
+    # 每 6 小时一次；错开整点（GitHub 定时任务在整点最拥堵，常有延迟甚至丢弃）
+    - cron: '17 */6 * * *'
+  workflow_dispatch:      # 也可以在 Actions 页面点按钮手动跑
+
+permissions:
+  contents: write         # 需要写权限才能把结果提交回仓库
+
+concurrency:
+  group: sync-goods
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 准备 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 抓取并同步商品
+        run: python sync-goods.py
+
+      - name: 有变化则提交
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "商品无变化，跳过提交"
+            exit 0
+          fi
+          git config user.name  "helix-sync-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "chore(sync): 同步店铺在售商品与价格"
+          git push
