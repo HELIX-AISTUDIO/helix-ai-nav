@@ -31,13 +31,26 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: 连通性自检
+        continue-on-error: true
+        run: |
+          UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36'
+          for u in "https://wzyp.cn/shopApi/Shop/goodsList" "https://www.16688.com.cn/shopApi/goods/list"; do
+            t0=$(date +%s%N)
+            code=$(curl -s -o /dev/null -w '%{http_code}' -m 25 -X POST "$u" \
+              -H 'Content-Type: application/json' -H "User-Agent: $UA" -d '{"probe":1}' 2>/dev/null || echo "000")
+            t1=$(date +%s%N)
+            ms=$(( (t1 - t0) / 1000000 ))
+            echo "::notice::探针 $u → HTTP $code / ${ms}ms"
+          done
+
       - name: 抓取并同步商品
         run: |
           # 失败时把脚本的真实报错抬成注解，否则只看到「退出码 1」无法定位
           if ! python sync-goods.py > /tmp/sync.log 2>&1; then
             cat /tmp/sync.log
-            msg=$(tail -c 700 /tmp/sync.log | tr '\n' ' ' | tr -d '\r' | sed 's/%/%25/g')
-            echo "::error::同步失败：${msg}"
+            msg=$(grep -aE 'RuntimeError|HTTPError|URLError|Error' /tmp/sync.log | tail -2 | tr '\n' ' ' | tr -d '\r' | sed 's/%/%25/g')
+            echo "::error::同步失败：${msg:0:800}"
             exit 1
           fi
           cat /tmp/sync.log
