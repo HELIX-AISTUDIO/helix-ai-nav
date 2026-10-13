@@ -1,6 +1,6 @@
 # HELIX-AI 渠道站
 
-HELIX AI STUDIO 的店铺渠道引导页 —— 一个单文件、零外部依赖的静态站点。
+HELIX AI STUDIO 的店铺渠道引导页 + AI资讯页 —— 两个页面、零外部依赖的静态站点。
 
 ## 这是什么
 
@@ -16,9 +16,14 @@ HELIX AI STUDIO 的店铺渠道引导页 —— 一个单文件、零外部依�
 
 ## 技术说明
 
-整站就是根目录的 `index.html` 一个文件：
+整站由两个页面组成（构建产物本身零外部依赖，唯一例外是 AI资讯页的**实时数据刷新**——可降级，见下）：
 
-- **零外部依赖** —— 没有 CDN、没有外部字体、没有图片外链；头像以 base64 内联在 CSS 变量 `--avatar` 里。断网也能完整打开。
+| 页面 | 作用 |
+|---|---|
+| `index.html` | 渠道引导页：主营产品 / 在售商品 / 两个店铺入口 / 购买流程 / 售后支持 |
+| `news.html` | AI资讯页「Codex 重置雷达」：重置动态 / 参考概率 / Tibo 动态 / OpenAI 服务状态 |
+
+- **零外部依赖** —— 没有 CDN、没有外部字体、没有图片外链；头像以 base64 内联在 CSS 变量 `--avatar` 里。断网也能完整打开（AI资讯页显示构建时快照）。
 - **可直接部署** —— 丢进任意静态托管（GitHub Pages / Netlify / 对象存储）就能跑，无需构建步骤。
 - **深色视觉体系** —— 近黑底 `#0b0c0d` + 金属金渐变，参考 higgsfield.ai 的配色语言。
 
@@ -63,6 +68,24 @@ python sync-goods.py --check  # 只检查有没有变化，不写文件
 > （c）对完全没有 UA 的请求直接 403。所以用无头浏览器验证时要覆盖成普通 UA，
 > 而 CI 抓不到它是正常现象，不是 bug。
 
+### AI资讯页数据同步（news.html）
+
+AI资讯页展示的 Codex 重置动态来自 [codex-reset.com](https://codex-reset.com/zh/) 的四个公开接口
+（`/api/status` `/api/timeline` `/api/forecast` `/api/feed`），接口放行任意来源跨域，页面按 **CC BY 4.0** 注明来源复用。
+
+同样是两条互补链路：
+
+| | 说明 |
+|---|---|
+| **页面内前端同步** | 加载时浏览器直连上述接口实时刷新；任何一步失败静默保留构建时快照 |
+| **本地手动烘焙** | `python sync-news.py` 抓取接口 → 重写 `news.html` 里四个标记区块 |
+
+- 构建时快照同时是「前端拿不到数据」时的兜底内容；四个接口任一失败，脚本整体放弃、不写文件
+- 想立刻刷新快照：跑 `python sync-news.py`（本机在国内可直接访问 codex-reset.com）
+- 不要手改 `NSTAMP / NSTAT / NHIST / NFEED` 四个 `:START/:END` 标记之间的 HTML，下次烘焙会被覆盖
+
+> **注意**：codex-reset.com 站点设了 `X-Frame-Options: DENY`，**不能 iframe 嵌入**，只能像现在这样取数据自渲染。
+
 ### 想手工改内容时
 
 | 改什么 | 改哪里 |
@@ -71,7 +94,9 @@ python sync-goods.py --check  # 只检查有没有变化，不写文件
 | 改配色 | `:root` 的颜色变量；**金色文字必须用 `--gold-text`**，不要复用按钮的 `--gold-grad`（后者含暗端，用在小字号上会发浑） |
 | 改商品**展示名** | `sync-goods.py` 里的 `CURATED` 表，按 goods_key 补一行即可（接口原始名带营销 emoji，不适合直接上屏） |
 | 改商品区块结构 | 改 `sync-goods.py` 的 `render()`；**不要手改 `GOODS:START/END` 之间的 HTML**，下次同步会被覆盖 |
-| 改粒子效果 | 搜 `fx-particles`，粒子密度、透明度、连线强度都在该段 JS 里 |
+| 改资讯页**动态数据** | 跑 `python sync-news.py`（或靠页面加载时的前端自动刷新）；四个标记区块不要手改 |
+| 改资讯页**文案 / 版式** | 直接改 `news.html`（标记区块之外的部分）；页头、页脚、粒子与 index.html 同款 |
+| 改粒子效果 | 搜 `fx-particles`，粒子密度、透明度、连线强度都在该段 JS 里（两个页面各有一份） |
 
 ### 店铺接口（实测可用）
 
