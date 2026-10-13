@@ -32,7 +32,15 @@ jobs:
           python-version: '3.12'
 
       - name: 抓取并同步商品
-        run: python sync-goods.py
+        run: |
+          # 失败时把脚本的真实报错抬成注解，否则只看到「退出码 1」无法定位
+          if ! python sync-goods.py > /tmp/sync.log 2>&1; then
+            cat /tmp/sync.log
+            msg=$(tail -c 700 /tmp/sync.log | tr '\n' ' ' | tr -d '\r' | sed 's/%/%25/g')
+            echo "::error::同步失败：${msg}"
+            exit 1
+          fi
+          cat /tmp/sync.log
 
       - name: 有变化则提交
         run: |
