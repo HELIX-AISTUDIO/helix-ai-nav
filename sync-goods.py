@@ -75,7 +75,11 @@ def http_post(url, payload, timeout=30, tries=4):
                 raw = r.read()
                 if not raw.strip():
                     raise ValueError('响应体为空（疑似被风控拦截，HTTP %s）' % r.status)
-                return json.loads(raw.decode('utf-8', 'replace'))
+                txt = raw.decode('utf-8', 'replace')
+                if txt.lstrip()[:1] == '<':
+                    raise ValueError('返回 HTML 页面而非 JSON（被风控挑战页拦截，HTTP %s，%d 字节）'
+                                     % (r.status, len(raw)))
+                return json.loads(txt)
         except Exception as e:
             last = e
             if i < tries - 1:
@@ -164,7 +168,11 @@ ARROW = ('<svg class="g-arrow" viewBox="0 0 24 24" fill="none" stroke="currentCo
 def render(items):
     blocks = []
     for it in items:
-        name, meta = CURATED.get(it['key']) or (clean_name(it['raw_name']), '以商品页说明为准')
+        if it.get('name_override'):          # 沿用页面里已有的展示名（例如抓取被拦截时回退）
+            name_e, meta_e = it['name_override'], it.get('meta_override', '')
+        else:
+            name, meta = CURATED.get(it['key']) or (clean_name(it['raw_name']), '以商品页说明为准')
+            name_e, meta_e = escape(name), escape(meta)
         blocks.append(
             '        <a class="g-item reveal" data-key="{key}" data-shop="{sid}" href="{link}" target="_blank" rel="noopener">\n'
             '          <span class="g-top"><span class="g-shop {cls}">{shop}</span>'
@@ -176,8 +184,43 @@ def render(items):
             '        </a>'.format(key=it['key'], sid=it['shop_id'], link=it['link'],
                                cls=it['shop_cls'], shop=it['shop'],
                                price=fmt_price(it['price']),
-                               name=escape(name), meta=escape(meta), arrow=ARROW))
+                               name=name_e, meta=meta_e, arrow=ARROW))
     return '\n'.join(blocks)
+
+
+def parse_existing(html, shop_id):
+    """从当前 index.html 的商品区块里回读已渲染的卡片。
+
+    用途：某个店铺抓取失败时不至于把它的商品整片删掉，而是原样沿用上一次的快照。
+    """
+    m = re.search(re.escape(START) + r'(.*?)' + re.escape(END), html, re.S)
+    if not m:
+        return []
+    out = []
+    for card in re.findall(r'<a class="g-item[^"]*"(.*?)</a>', m.group(1), re.S):
+        km = re.search(r'data-key="([^"]+)"', card)
+        sm = re.search(r'data-shop="([^"]+)"', card)
+        if not km or not sm or sm.group(1) != shop_id:
+            continue
+        hm = re.search(r'href="([^"]+)"', card)
+        pm = re.search(r'<span class="g-price">([^<]*)</span>', card)
+        nm = re.search(r'<span class="g-name">([^<]*)</span>', card)
+        mm = re.search(r'<span class="g-meta">([^<]*)</span>', card)
+        price = (pm.group(1) if pm else '').lstrip('¥')
+        out.append({
+            'key': km.group(1),
+            'link': hm.group(1) if hm else '',
+            'price': price,
+            'shop': '链动小铺' if shop_id == 'wzyp' else '16688',
+            'shop_cls': 'gold' if shop_id == 'wzyp' else 'green',
+            'shop_id': shop_id,
+            'name_override': nm.group(1) if nm else '',
+            'meta_override': mm.group(1) if mm else '',
+        })
+    # 从 HTML 回读的价格已是展示用字符串，避免被当作数字再格式化
+    for it in out:
+        it['price'] = float(it['price']) if re.fullmatch(r'[\d.]+', it['price'] or '') else 0
+    return out
 
 
 def escape(s):
@@ -206,9 +249,32 @@ def main():
     if START not in html or END not in html:
         raise SystemExit('× index.html 里找不到 GOODS:START / GOODS:END 标记')
 
-    items = fetch_wzyp() + fetch_16688()
-    # 只保留表格里已整理的顺序感：先按归类，再按价格
-    items.sort(key=lambda x: (rank_of(CURATED.get(x['key'], (x['raw_name'],))[0]), float(x['price'] or 0)))
+    # 两个店铺分别抓。任一方被拦截就沿用页面里的旧快照，不影响另一方更新。
+    #
+    # 已知环境差异：链动小铺前置阿里云 ESA，会拦境外机房 IP
+    # （GitHub Actions 拿到的是 HTML 挑战页），但放行普通浏览器。
+    # 所以链动小铺的实时性由页面里的前端同步保证，本脚本负责兜底与 16688。
+    sources = [('链动小铺', 'wzyp', fetch_wzyp), ('16688', '16688', fetch_16688)]
+    items, stale = [], []
+    for label, shop_id, fn in sources:
+        try:
+            got = fn()
+            print('✓ %s 获取到 %d 件' % (label, len(got)))
+            items.extend(got)
+        except Exception as e:
+            kept = parse_existing(html, shop_id)
+            print('！%s 抓取失败：%s' % (label, e))
+            print('   → 沿用页面里的 %d 件旧快照' % len(kept))
+            items.extend(kept)
+            stale.append(label)
+
+    if not items:
+        raise SystemExit('× 两个店铺都没拿到数据，且页面里也没有可沿用的快照')
+
+    # 先按归类，再按价格
+    items.sort(key=lambda x: (rank_of(CURATED.get(x['key'], (x['raw_name'],))[0]
+                                     if not x.get('name_override') else x['name_override']),
+                              float(x['price'] or 0)))
 
     stamp = datetime.now(timezone(timedelta(hours=8))).strftime('%Y-%m-%d')
     block = build_block(items, stamp)
@@ -218,22 +284,22 @@ def main():
     new_html = head.rstrip() + '\n      ' + block + tail
 
     changed = new_html != html
-    n_wzyp = sum(1 for i in items if i['shop'] == '链动小铺')
-    print('抓取到 %d 件商品（链动小铺 %d 件 / 16688 %d 件）'
-          % (len(items), n_wzyp, len(items) - n_wzyp))
-    for it in items:
-        print('  %-9s ¥%-9s %s' % (it['shop'], fmt_price(it['price']),
-                                   CURATED.get(it['key'], (clean_name(it['raw_name']),))[0]))
+    print('\n合计 %d 件（链动小铺 %d / 16688 %d）'
+          % (len(items),
+             sum(1 for i in items if i['shop'] == '链动小铺'),
+             sum(1 for i in items if i['shop'] == '16688')))
 
     if not changed:
-        print('\n无变化，未修改 index.html')
+        print('无变化，未修改 index.html')
         return 0
     if check_only:
-        print('\n检测到变化（--check 模式，未写入）')
+        print('检测到变化（--check 模式，未写入）')
         return 1
 
     INDEX.write_text(new_html, encoding='utf-8')
-    print('\n已更新 index.html')
+    print('已更新 index.html')
+    if stale:
+        print('（%s 本次未取到实时数据，用的是上一次快照）' % '、'.join(stale))
     return 0
 
 
